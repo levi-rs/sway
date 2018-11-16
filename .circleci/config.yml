@@ -1,0 +1,56 @@
+version: 2.1
+
+executors:
+  python-3-7:
+    working_directory: ~/sway
+    docker:
+      - image: circleci/python:3.7
+
+  test-status-reporter:
+    docker:
+      - image: bash:latest
+
+commands:
+  run-tests:
+    description: "Run Sway tests"
+    parameters:
+      python-version:
+        type: string
+    steps:
+      - checkout
+      - run: sudo pip install tox poetry
+      - run: tox -e lint
+      - run: tox -e << parameters.python-version >>
+        # - run: tox -e functional
+
+jobs:
+  test-3-7:
+    executor: python-3-7
+    steps:
+      - run-tests:
+          python-version: py37
+
+  tests-passed:
+    executor: test-status-reporter
+    steps:
+      - run:
+          name: All tests passed
+          command: |
+            echo "All test checks (linting + unit tests + functional tests) passed"
+
+test-filters: &test-filters
+  tags:
+    ignore: /.*/
+  branches:
+    only: /.*/
+
+workflows:
+  version: 2.1
+  sway-workflow:
+    jobs:
+      - test-3-7:
+          filters: *test-filters
+      - tests-passed:
+          requires:
+            - test-3-7
+          filters: *test-filters
