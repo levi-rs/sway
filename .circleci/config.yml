@@ -1,10 +1,10 @@
 version: 2.1
 
 executors:
-  python-3-7:
+  python:
     working_directory: ~/sway
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python
 
   test-status-reporter:
     docker:
@@ -24,8 +24,35 @@ commands:
         # - run: tox -e functional
 
 jobs:
+
+  test-2-7:
+    executor: python
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      - run-tests:
+          python-version: py27
+
+  test-3-5:
+    executor: python
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      - run-tests:
+          python-version: py35
+
+  test-3-6:
+    executor: python
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - run-tests:
+          python-version: py36
+
   test-3-7:
-    executor: python-3-7
+    executor: python
+    docker:
+      - image: circleci/python:3.7
     steps:
       - run-tests:
           python-version: py37
@@ -48,9 +75,18 @@ workflows:
   version: 2.1
   sway-workflow:
     jobs:
+      - test-2-7:
+          filters: *test-filters
+      - test-3-5:
+          filters: *test-filters
+      - test-3-6:
+          filters: *test-filters
       - test-3-7:
           filters: *test-filters
       - tests-passed:
           requires:
+            - test-2-7
+            - test-3-5
+            - test-3-6
             - test-3-7
           filters: *test-filters
